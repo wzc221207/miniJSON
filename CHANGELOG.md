@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1 (2024-10-04)
+
+Features
+- Support basic string parsing
+- Throw error when JSON string is invalid
+
 ## 0.1.0 (2024-10-03)
 
 Features
