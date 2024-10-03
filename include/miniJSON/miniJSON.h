@@ -2,14 +2,14 @@
 #pragma once
 
 #include <cstring>
-#include <iostream>
 #include <map>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "./detail/parser.h"
+#include "./errors.h"
 #include "./json_types.h"
-#include "detail/parser.h"
 
 #define MINIJSON_VERSION_MAJOR 0
 #define MINIJSON_VERSION_MINOR 1
@@ -38,6 +38,8 @@ class json_node {
         delete j;
       }
       delete m_value.array;
+    } else if (m_type == json_value_type::string) {
+      delete m_value.str;
     }
   }
 
@@ -51,6 +53,9 @@ class json_node {
     }
     if (m_type == json_value_type::null) {
       return "null";
+    }
+    if (m_type == json_value_type::string) {
+      return *m_value.str;
     }
     if (m_type == json_value_type::array) {
       std::string s{"["};
@@ -95,6 +100,13 @@ class json_node {
   void set_array() {
     m_value.array = new std::vector<json_node *>();
     m_type = json_value_type::array;
+  }
+  /*
+    Initialize the current string value
+   */
+  void set_string() {
+    m_value.str = new std::string;
+    m_type = json_value_type::string;
   }
 
  public:
