@@ -5,6 +5,12 @@
 
 TEST(BasicParseTest, Empty) {
   {
+    // empty string
+    EXPECT_THROW(
+        { auto json = miniJSON::parse(""); }, miniJSON::json_parse_error);
+  }
+  {
+    // string with whitespace
     EXPECT_THROW(
         { auto json = miniJSON::parse("  "); }, miniJSON::json_parse_error);
   }
@@ -24,10 +30,12 @@ TEST(BasicParseTest, Boolean) {
     EXPECT_EQ(json_str, "false");
   }
   {
+    // incomplete true
     EXPECT_THROW(
         { auto json = miniJSON::parse("tru"); }, miniJSON::json_parse_error);
   }
   {
+    // incomplete false
     EXPECT_THROW(
         { auto json = miniJSON::parse("fals"); }, miniJSON::json_parse_error);
   }
@@ -40,6 +48,7 @@ TEST(BasicParseTest, Null) {
     EXPECT_EQ(json_str, "null");
   }
   {
+    // invalid character
     EXPECT_THROW(
         { auto json = miniJSON::parse(" null ."); },
         miniJSON::json_parse_error);
@@ -54,6 +63,7 @@ TEST(BasicParseTest, Array) {
     EXPECT_EQ(json_str, R"([true,null,"sdljf",[false,null,"asdim"]])");
   }
   {
+    // string not enclosed with quotation mark
     EXPECT_THROW(
         {
           auto json = miniJSON::parse(
@@ -110,8 +120,84 @@ TEST(BasicParseTest, String) {
     EXPECT_EQ(json_str, R"("abc\tdef")");
   }
   {
+    // invalid escape sequence
     EXPECT_THROW(
         { auto json = miniJSON::parse(R"("abc\xdef")"); },
+        miniJSON::json_parse_error);
+  }
+}
+
+TEST(BasicParseTest, Object) {
+  {
+    auto json = miniJSON::parse(R"({"name": "Alicia"})");
+    auto json_str = json.to_string();
+    EXPECT_EQ(json_str, R"({"name":"Alicia"})");
+  }
+  {
+    // insertion order should be maintained
+    auto json = miniJSON::parse(R"({"name": "Alicia" , "likes": ["tennis",
+        "sushi"]})");
+    auto json_str = json.to_string();
+    EXPECT_EQ(json_str, R"({"name":"Alicia","likes":["tennis","sushi"]})");
+  }
+  {
+    // nested object
+    auto json = miniJSON::parse(
+        R"({"name": "Alicia", "likes": ["tennis", "sushi", null], "friends":
+        [{"name": "David", "male": true}]})");
+    auto json_str = json.to_string();
+    EXPECT_EQ(
+        json_str,
+        R"({"name":"Alicia","likes":["tennis","sushi",null],"friends":[{"name":"David","male":true}]})");
+  }
+  {
+    // key not enclosed by quotation mark
+    EXPECT_THROW(
+        {
+          auto json = miniJSON::parse(
+              R"({"name": "Alicia", "likes": ["tennis", "sushi", null],
+              friends: [{"name": "David", "male": true}]})");
+        },
+        miniJSON::json_parse_error);
+  }
+  {
+    // no colon after key
+    EXPECT_THROW(
+        {
+          auto json = miniJSON::parse(
+              R"({"name": "Alicia", "likes": ["tennis", "sushi", null],
+              "friends" [{"name": "David", "male": true}]})");
+        },
+        miniJSON::json_parse_error);
+  }
+  {
+    // no comma between key value pairs
+    EXPECT_THROW(
+        {
+          auto json = miniJSON::parse(
+              R"({"name": "Alicia" "likes": ["tennis", "sushi", null],
+              "friends": [{"name": "David", "male": true}]})");
+        },
+        miniJSON::json_parse_error);
+  }
+  {
+    // does not start with {
+    EXPECT_THROW(
+        {
+          auto json = miniJSON::parse(
+              R"("name": "Alicia" "likes": ["tennis", "sushi", null],
+              "friends": [{"name": "David", "male": true}]})");
+        },
+        miniJSON::json_parse_error);
+  }
+  {
+    // does not end with }
+    EXPECT_THROW(
+        {
+          auto json = miniJSON::parse(
+              R"({"name": "Alicia" "likes": ["tennis", "sushi", null],
+              "friends": [{"name": "David", "male": true}])");
+        },
         miniJSON::json_parse_error);
   }
 }

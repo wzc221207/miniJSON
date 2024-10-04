@@ -25,4 +25,4 @@ jobs:
         run: pip install cpplint
         
       - name: Run lint
-        run: cpplint --recursive ./include
+        run: cpplint --recursive ./include ./tests

@@ -59,6 +59,59 @@ class parser {
     return json_parse_type::json_value;
   }
 
+  json_parse_type parse_object_item(JSONNode *object) {
+    parse_whitespace();
+    if (current_character() != '\"') {
+      return json_parse_type::error;
+    }
+    m_parse_index++;
+
+    JSONNode *key = new JSONNode();
+    if (parse_string(key) != json_parse_type::json_value) {
+      delete key;
+      return json_parse_type::error;
+    }
+
+    parse_whitespace();
+    if (current_character() != ':') {
+      delete key;
+      return json_parse_type::error;
+    }
+    m_parse_index++;
+    parse_whitespace();
+
+    JSONNode *value = new JSONNode();
+    if (parse_value(value) != json_parse_type::json_value) {
+      delete key;
+      delete value;
+      return json_parse_type::error;
+    }
+
+    (*object->m_value.object)[*key->m_value.str] = value;
+    delete key;  // object key string will be copied so this dynamically
+                 // allocated string json_node can be deleted
+    parse_whitespace();
+
+    if (!parse_comma()) {
+      return json_parse_type::error;
+    }
+    return json_parse_type::json_value;
+  }
+
+  json_parse_type parse_object(JSONNode *result) {
+    result->set_object();
+    while (remaining_parse_length() > 0) {
+      if (current_character() == '}') {
+        m_parse_index++;
+        break;
+      }
+      if (parse_object_item(result) != json_parse_type::json_value) {
+        return json_parse_type::error;
+      }
+    }
+    return json_parse_type::json_value;
+  }
+
   bool parse_escape_sequence(JSONNode *result) {
     if (remaining_parse_length() == 0) {
       return false;
@@ -131,6 +184,26 @@ class parser {
     }
   }
 
+  bool parse_comma() {
+    if (current_character() == ',') {
+      m_parse_index++;
+      return true;
+    }
+    int idx = m_parse_index;
+    while (idx < m_json_s.length()) {
+      if (m_json_s[idx] == '}') {
+        return true;
+      }
+      if (m_json_s[idx] == ' ' || m_json_s[idx] == '\n' ||
+          m_json_s[idx] == '\r' || m_json_s[idx] == '\t') {
+        idx++;
+        continue;
+      }
+      break;
+    }
+    return false;
+  }
+
   /*
     Main parsing logic
   */
@@ -150,9 +223,12 @@ class parser {
                parse_n_and_compare(4, "null")) {
       m_parse_index += 4;
       type = json_parse_type::json_value;
-    } else if (remaining_parse_length() > 0 && parse_and_compare('[')) {
+    } else if (remaining_parse_length() > 1 && parse_and_compare('[')) {
       m_parse_index++;
       type = parse_array(result);
+    } else if (remaining_parse_length() > 1 && parse_and_compare('{')) {
+      m_parse_index++;
+      type = parse_object(result);
     } else if (remaining_parse_length() > 0 && parse_and_compare(']')) {
       m_parse_index++;
       type = json_parse_type::reach_array_end;

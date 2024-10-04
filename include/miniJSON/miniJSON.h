@@ -2,18 +2,18 @@
 #pragma once
 
 #include <cstring>
-#include <map>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "./detail/ordered_map.h"
 #include "./detail/parser.h"
 #include "./errors.h"
 #include "./json_types.h"
 
 #define MINIJSON_VERSION_MAJOR 0
 #define MINIJSON_VERSION_MINOR 1
-#define MINIJSON_VERSION_PATCH 1
+#define MINIJSON_VERSION_PATCH 2
 
 namespace miniJSON {
 /*
@@ -40,6 +40,11 @@ class json_node {
       delete m_value.array;
     } else if (m_type == json_value_type::string) {
       delete m_value.str;
+    } else if (m_type == json_value_type::object) {
+      for (auto key : *m_value.object) {
+        delete (*m_value.object)[key];
+      }
+      delete m_value.object;
     }
   }
 
@@ -66,6 +71,22 @@ class json_node {
         }
       }
       s += "]";
+      return s;
+    }
+    if (m_type == json_value_type::object) {
+      std::string s{"{"};
+      size_t sz = (*m_value.object).size();
+      int i = 0;
+      for (auto key : *m_value.object) {
+        s += key;
+        s += ":";
+        s += (*m_value.object)[key]->to_string();
+        if (i != sz - 1) {
+          s += ",";
+        }
+        i++;
+      }
+      s += "}";
       return s;
     }
     return "";
@@ -98,15 +119,22 @@ class json_node {
     Initialize the current array value
    */
   void set_array() {
-    m_value.array = new std::vector<json_node *>();
+    m_value.array = new json_array_t;
     m_type = json_value_type::array;
   }
   /*
     Initialize the current string value
    */
   void set_string() {
-    m_value.str = new std::string;
+    m_value.str = new json_string_t;
     m_type = json_value_type::string;
+  }
+  /*
+    Initialize the current object value
+   */
+  void set_object() {
+    m_value.object = new json_object_t;
+    m_type = json_value_type::object;
   }
 
  public:
@@ -123,7 +151,7 @@ class json_node {
     - boolean: true/false
     - null
   */
-  using json_object_t = std::map<std::string, json_node>;
+  using json_object_t = ordered_map<std::string, json_node *>;
   using json_array_t = std::vector<json_node *>;
   using json_string_t = std::string;
   using json_number_t = int;

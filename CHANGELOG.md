@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2 (2024-10-05)
+
+Features
+- Support object type JSON parsing
+
 ## 0.1.1 (2024-10-04)
 
 Features
