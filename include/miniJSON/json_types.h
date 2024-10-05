@@ -6,5 +6,13 @@ namespace miniJSON {
 /*
   Types of JSON values
 */
-enum class json_value_type { object, array, string, number, boolean, null };
+enum class json_value_type {
+  object,
+  array,
+  string,
+  number_int,
+  number_double,
+  boolean,
+  null
+};
 }  // namespace miniJSON

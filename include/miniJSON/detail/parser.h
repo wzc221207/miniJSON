@@ -1,5 +1,7 @@
 // Copyright (c) 2024 Zhichen (Joshua) Wen
 #pragma once
+#include <cmath>
+#include <cstdlib>
 #include <string>
 #include <utility>
 #include <vector>
@@ -204,6 +206,45 @@ class parser {
     return false;
   }
 
+  json_parse_type parse_number(JSONNode *result) {
+    std::string number_s;
+    while (remaining_parse_length() > 0) {
+      if ((current_character() >= '0' && current_character() <= '9') ||
+          current_character() == '-' || current_character() == '+' ||
+          current_character() == 'e' || current_character() == 'E' ||
+          current_character() == '.') {
+        number_s += current_character();
+        m_parse_index++;
+      } else {
+        break;
+      }
+    }
+
+    // check if number is valid
+    char *end_ptr = nullptr;
+    double d = strtod(number_s.c_str(), &end_ptr);
+    if (strlen(end_ptr) > 0) {
+      return json_parse_type::error;
+    }
+    // must hvae digits after dot
+    if (number_s[number_s.length() - 1] == '.') {
+      return json_parse_type::error;
+    }
+    // check it's double or integer
+    double integral_part;
+    bool isDouble = (modf(d, &integral_part) != 0.0);
+
+    if (d > INT64_MAX || d < INT64_MIN) {
+      result->set_number_double(d);
+    } else if (isDouble) {
+      result->set_number_double(d);
+    } else {
+      result->set_number_int(static_cast<uint64_t>(d));
+    }
+
+    return json_parse_type::json_value;
+  }
+
   /*
     Main parsing logic
   */
@@ -238,6 +279,10 @@ class parser {
     } else if (remaining_parse_length() > 1 && parse_and_compare('\"')) {
       m_parse_index++;
       type = parse_string(result);
+    } else if (remaining_parse_length() > 0 &&
+               ((current_character() >= '0' && current_character() <= '9') ||
+                current_character() == '-')) {
+      type = parse_number(result);
     }
     parse_whitespace();
     return type;

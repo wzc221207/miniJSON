@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.3 (2024-10-06)
+
+Features
+- Support number type JSON parsing
+
 ## 0.1.2 (2024-10-05)
 
 Features

@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstring>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -13,7 +14,7 @@
 
 #define MINIJSON_VERSION_MAJOR 0
 #define MINIJSON_VERSION_MINOR 1
-#define MINIJSON_VERSION_PATCH 2
+#define MINIJSON_VERSION_PATCH 3
 
 namespace miniJSON {
 /*
@@ -62,6 +63,14 @@ class json_node {
     if (m_type == json_value_type::string) {
       return *m_value.str;
     }
+    if (m_type == json_value_type::number_int) {
+      return std::to_string(m_value.number_int);
+    }
+    if (m_type == json_value_type::number_double) {
+      std::ostringstream sstream;
+      sstream << m_value.number_double;
+      return sstream.str();
+    }
     if (m_type == json_value_type::array) {
       std::string s{"["};
       for (int i = 0; i < m_value.array->size(); i++) {
@@ -108,10 +117,18 @@ class json_node {
   }
 
  public:
+  using json_object_t = ordered_map<std::string, json_node *>;
+  using json_array_t = std::vector<json_node *>;
+  using json_string_t = std::string;
+  using json_int_t = int64_t;
+  using json_double_t = double;
+  using json_boolean_t = bool;
+
+ public:
   /*
     Initialize the current boolean value
    */
-  void set_boolean(bool b) {
+  void set_boolean(json_boolean_t b) {
     m_type = json_value_type::boolean;
     m_value.boolean = b;
   }
@@ -128,6 +145,20 @@ class json_node {
   void set_string() {
     m_value.str = new json_string_t;
     m_type = json_value_type::string;
+  }
+  /*
+    Initialize the current integer numeric value
+   */
+  void set_number_int(json_int_t x) {
+    m_value.number_int = x;
+    m_type = json_value_type::number_int;
+  }
+  /*
+    Initialize the current double numeric value
+   */
+  void set_number_double(json_double_t d) {
+    m_value.number_double = d;
+    m_type = json_value_type::number_double;
   }
   /*
     Initialize the current object value
@@ -151,16 +182,12 @@ class json_node {
     - boolean: true/false
     - null
   */
-  using json_object_t = ordered_map<std::string, json_node *>;
-  using json_array_t = std::vector<json_node *>;
-  using json_string_t = std::string;
-  using json_number_t = int;
-  using json_boolean_t = bool;
   union json_value {
     json_object_t *object;
     json_array_t *array;
     json_string_t *str;
-    json_number_t number;
+    json_int_t number_int;
+    json_double_t number_double;
     json_boolean_t boolean;
     json_value() = default;
     json_value(json_value &&other) = default;
