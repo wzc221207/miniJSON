@@ -156,11 +156,9 @@ class parser {
 
   json_parse_type parse_string(JSONNode *result) {
     result->set_string();
-    *result->m_value.str += '\"';
     bool string_closed = false;
     while (remaining_parse_length() > 0) {
       if (parse_and_compare('\"')) {
-        *result->m_value.str += R"(")";
         m_parse_index++;
         string_closed = true;
         break;

@@ -14,7 +14,7 @@
 
 #define MINIJSON_VERSION_MAJOR 0
 #define MINIJSON_VERSION_MINOR 1
-#define MINIJSON_VERSION_PATCH 3
+#define MINIJSON_VERSION_PATCH 4
 
 namespace miniJSON {
 /*
@@ -61,7 +61,7 @@ class json_node {
       return "null";
     }
     if (m_type == json_value_type::string) {
-      return *m_value.str;
+      return '\"' + *m_value.str + '\"';
     }
     if (m_type == json_value_type::number_int) {
       return std::to_string(m_value.number_int);
@@ -87,7 +87,7 @@ class json_node {
       size_t sz = (*m_value.object).size();
       int i = 0;
       for (auto key : *m_value.object) {
-        s += key;
+        s += '\"' + key + '\"';
         s += ":";
         s += (*m_value.object)[key]->to_string();
         if (i != sz - 1) {
@@ -102,27 +102,92 @@ class json_node {
   }
 
  public:
-  /*
-    Get the current JSON value type
-  */
-  json_value_type get_type() const { return m_type; }
-  /*
-    Get the current boolean value
-  */
-  const bool *get_boolean() const {
-    if (m_type == json_value_type::boolean) {
-      return &(m_value.boolean);
-    }
-    return nullptr;
-  }
-
- public:
   using json_object_t = ordered_map<std::string, json_node *>;
   using json_array_t = std::vector<json_node *>;
   using json_string_t = std::string;
   using json_int_t = int64_t;
   using json_double_t = double;
   using json_boolean_t = bool;
+
+ public:
+  /*
+    Get the current JSON value type
+  */
+  json_value_type get_type() const { return m_type; }
+
+  /*
+    Get the current boolean value
+  */
+  const bool get_boolean() const {
+    if (m_type == json_value_type::boolean) {
+      return m_value.boolean;
+    }
+    throw json_type_error(
+        "trying to access boolean value from a non-boolean JSON node");
+  }
+
+  /*
+    Get the current boolean value
+  */
+  const json_string_t get_string() const {
+    if (m_type == json_value_type::string) {
+      return *m_value.str;
+    }
+    throw json_type_error(
+        "trying to access string value from a non-string JSON node");
+  }
+
+  /*
+    Get the current integer value
+  */
+  const json_int_t get_integer() const {
+    if (m_type == json_value_type::number_int) {
+      return m_value.number_int;
+    }
+    throw json_type_error(
+        "trying to access integer value from a non-integer JSON node");
+  }
+
+  /*
+    Get the current double value
+  */
+  const json_double_t get_double() const {
+    if (m_type == json_value_type::number_double) {
+      return m_value.number_double;
+    }
+    throw json_type_error(
+        "trying to access double value from a non-double JSON node");
+  }
+
+  /*
+    Get the current object value
+  */
+  json_node &operator[](json_string_t key) const {
+    if (m_type == json_value_type::object) {
+      if (m_value.object->count(key) == 0) {
+        throw std::out_of_range("key is not found in the object");
+      }
+      auto val = (*m_value.object)[key];
+      return *val;
+    }
+    throw json_type_error(
+        "trying to access object value from a non-object JSON node");
+  }
+
+  /*
+    Get the current array value
+  */
+  json_node &operator[](size_t index) const {
+    if (m_type == json_value_type::array) {
+      if ((index >= m_value.array->size()) || index < 0) {
+        throw std::out_of_range("given index out of range");
+      }
+      auto val = (*m_value.array)[index];
+      return *val;
+    }
+    throw json_type_error(
+        "trying to access array value from a non-array JSON node");
+  }
 
  public:
   /*
@@ -202,7 +267,7 @@ class json_node {
 /*
   Parse JSON string into JSON node (Deserialization)
 */
-json_node parse(const std::string &s) {
+inline json_node parse(const std::string &s) {
   json_node j;
   detail::parser<json_node> parser{&j, s};
   parser.parse();

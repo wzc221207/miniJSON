@@ -19,13 +19,11 @@ TEST(BasicParseTest, Empty) {
 TEST(BasicParseTest, Boolean) {
   {
     auto json = miniJSON::parse("true");
-    EXPECT_EQ(*json.get_boolean(), true);
     auto json_str = json.to_string();
     EXPECT_EQ(json_str, "true");
   }
   {
     auto json = miniJSON::parse("false");
-    EXPECT_EQ(*json.get_boolean(), false);
     auto json_str = json.to_string();
     EXPECT_EQ(json_str, "false");
   }

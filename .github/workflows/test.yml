@@ -35,4 +35,4 @@ jobs:
         run: |
           cd ./build
           ls -al
-          valgrind --leak-check=yes ./*_test
+          valgrind --leak-check=yes ./miniJSON_tests

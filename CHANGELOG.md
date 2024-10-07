@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.4 (2024-10-07)
+
+Features
+- Support getting value stored at the JSON node
+
 ## 0.1.3 (2024-10-06)
 
 Features

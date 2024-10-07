@@ -16,6 +16,7 @@ class ordered_map {
     }
     return m_map[key];
   }
+  size_t count(const Key &key) { return m_map.count(key); }
   size_t size() { return m_map.size(); }
   typename std::vector<Key>::iterator begin() {
     return insertion_order.begin();

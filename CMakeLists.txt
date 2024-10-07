@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(miniJSON VERSION 0.1.3)
+project(miniJSON VERSION 0.1.4)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -14,8 +14,8 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 enable_testing()
-add_executable(basic_parse_test tests/basic_parse_test.cpp)
+add_executable(miniJSON_tests tests/basic_parse_test.cpp tests/getter_test.cpp)
 include_directories(include)
-target_link_libraries(basic_parse_test GTest::gtest_main)
+target_link_libraries(miniJSON_tests GTest::gtest_main)
 include(GoogleTest)
-gtest_discover_tests(basic_parse_test)
+gtest_discover_tests(miniJSON_tests)
