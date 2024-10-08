@@ -18,10 +18,13 @@ std::cout << json["friends"][1].get_string() << std::endl;  // David
 // change values in JSON node
 json["username"] = "Gloria";
 json["age"] = 26;
-json["friends"][1] = "John";
+json["job"] = "Statistician";
 std::cout << json["username"].get_string() << std::endl;    // Gloria
 std::cout << json["age"].get_integer() << std::endl;        // 26
 std::cout << json["friends"][1].get_string() << std::endl;  // John
+std::cout << json["job"].get_string() << std::endl;       // Statistician
+// serialization
+std::cout << json.to_string() << std::endl;  // {"username":"Gloria","age":26,"friends":["Michael","John"],"job":null}
 ```
 
 ## License
