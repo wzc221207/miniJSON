@@ -13,6 +13,7 @@ enum class json_value_type {
   number_int,
   number_double,
   boolean,
-  null
+  null,
+  indeterminate
 };
 }  // namespace miniJSON

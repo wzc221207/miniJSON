@@ -14,7 +14,7 @@
 
 #define MINIJSON_VERSION_MAJOR 0
 #define MINIJSON_VERSION_MINOR 1
-#define MINIJSON_VERSION_PATCH 4
+#define MINIJSON_VERSION_PATCH 5
 
 namespace miniJSON {
 /*
@@ -31,23 +31,49 @@ class json_node {
     other.m_value = {};
     other.m_type = json_value_type::null;
   }
-  json_node &operator=(json_node &&other) = delete;
+  json_node &operator=(json_node &&other) {
+    if (this != &other) {
+      if (m_type == json_value_type::object) {
+        delete_object();
+      }
+      if (m_type == json_value_type::array) {
+        delete_array();
+      }
+      if (m_type == json_value_type::string) {
+        delete_string();
+      }
+      m_value = std::move(other.m_value);
+      m_type = other.m_type;
+      other.m_value = {};
+      other.m_type = json_value_type::null;
+    }
+    return *this;
+  }
   ~json_node() {
     if (m_type == json_value_type::array) {
-      for (int i = 0; i < m_value.array->size(); i++) {
-        json_node *j = (*m_value.array)[i];
-        delete j;
-      }
-      delete m_value.array;
+      delete_array();
     } else if (m_type == json_value_type::string) {
-      delete m_value.str;
+      delete_string();
     } else if (m_type == json_value_type::object) {
-      for (auto key : *m_value.object) {
-        delete (*m_value.object)[key];
-      }
-      delete m_value.object;
+      delete_object();
     }
   }
+
+ private:
+  void delete_object() {
+    for (auto key : *m_value.object) {
+      delete (*m_value.object)[key];
+    }
+    delete m_value.object;
+  }
+  void delete_array() {
+    for (int i = 0; i < m_value.array->size(); i++) {
+      json_node *j = (*m_value.array)[i];
+      delete j;
+    }
+    delete m_value.array;
+  }
+  void delete_string() { delete m_value.str; }
 
  public:
   /*
@@ -97,6 +123,12 @@ class json_node {
       }
       s += "}";
       return s;
+    }
+    if (m_type == json_value_type::indeterminate) {
+      throw json_type_error(
+          "JSON node has an indeterminate child. Access of the previously "
+          "non-existent element of object or array creates indeterminate "
+          "node.");
     }
     return "";
   }
@@ -165,7 +197,7 @@ class json_node {
   json_node &operator[](json_string_t key) const {
     if (m_type == json_value_type::object) {
       if (m_value.object->count(key) == 0) {
-        throw std::out_of_range("key is not found in the object");
+        (*m_value.object)[key] = new json_node(json_value_type::indeterminate);
       }
       auto val = (*m_value.object)[key];
       return *val;
@@ -180,7 +212,8 @@ class json_node {
   json_node &operator[](size_t index) const {
     if (m_type == json_value_type::array) {
       if ((index >= m_value.array->size()) || index < 0) {
-        throw std::out_of_range("given index out of range");
+        m_value.array->resize(index + 1);
+        (*m_value.array)[index] = new json_node(json_value_type::indeterminate);
       }
       auto val = (*m_value.array)[index];
       return *val;
@@ -190,6 +223,61 @@ class json_node {
   }
 
  public:
+  json_node(json_value_type t) : m_type(t) {
+    switch (t) {
+      case json_value_type::string:
+        m_value.str = new json_string_t;
+        break;
+      case json_value_type::boolean:
+        m_value.boolean = true;
+        break;
+      case json_value_type::number_int:
+        m_value.number_int = 0;
+        break;
+      case json_value_type::number_double:
+        m_value.number_double = 0.0;
+        break;
+      case json_value_type::object:
+        m_value.object = new json_object_t;
+        break;
+      case json_value_type::array:
+        m_value.array = new json_array_t;
+        break;
+      case json_value_type::null:
+        break;
+      case json_value_type::indeterminate:
+        break;
+      default:
+        break;
+    }
+  }
+  json_node(json_boolean_t b) {
+    m_value.boolean = b;
+    m_type = json_value_type::boolean;
+  }
+  json_node(json_int_t num) {
+    m_value.number_int = num;
+    m_type = json_value_type::number_int;
+  }
+  json_node(int num) {
+    m_value.number_int = num;
+    m_type = json_value_type::number_int;
+  }
+  json_node(json_double_t num) {
+    m_value.number_double = num;
+    m_type = json_value_type::number_double;
+  }
+  json_node(const char *s) {
+    m_value.str = new std::string(s);
+    m_type = json_value_type::string;
+  }
+  json_node(const json_string_t &s) {
+    m_value.str = new std::string(s);
+    m_type = json_value_type::string;
+  }
+  json_node(std::nullptr_t n) {}
+
+ private:
   /*
     Initialize the current boolean value
    */

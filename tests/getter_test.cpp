@@ -1,15 +1,10 @@
 // Copyright (c) 2024 Zhichen (Joshua) Wen
 #include <gtest/gtest.h>
 
-#include <cmath>
-#include <limits>
 #include <string>
 
+#include "./test-utils.h"
 #include "miniJSON/miniJSON.h"
-
-bool double_equal(double a, double b) {
-  return std::fabs(a - b) < std::numeric_limits<double>::epsilon();
-}
 
 TEST(GetterTest, Boolean) {
   {
@@ -83,12 +78,10 @@ TEST(GetterTest, Object) {
   }
   {
     // non-existent key
-    EXPECT_THROW(
-        {
-          auto json = miniJSON::parse(R"({"name": "Alicia"})");
-          json["name1"];
-        },
-        std::out_of_range);
+    auto json = miniJSON::parse(R"({"name": "Alicia"})");
+    EXPECT_EQ(json["name1"].get_type(),
+              miniJSON::json_value_type::indeterminate);
+    EXPECT_THROW({ json.to_string(); }, miniJSON::json_type_error);
   }
 }
 
@@ -109,11 +102,9 @@ TEST(GetterTest, Array) {
   }
   {
     // invalid index
-    EXPECT_THROW(
-        {
-          auto json = miniJSON::parse(R"({"friends": ["Alicia", "David"]})");
-          json["friends"][2];
-        },
-        std::out_of_range);
+    auto json = miniJSON::parse(R"({"friends": ["Alicia", "David"]})");
+    EXPECT_EQ(json["friends"][2].get_type(),
+              miniJSON::json_value_type::indeterminate);
+    EXPECT_THROW({ json.to_string(); }, miniJSON::json_type_error);
   }
 }

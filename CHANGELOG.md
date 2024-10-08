@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.5 (2024-10-09)
+
+Features
+- Support modifying value stored at the JSON node
+- Support creating JSON node implicitly from value
+
+CI
+- disable explicit constructor check
+
 ## 0.1.4 (2024-10-07)
 
 Features
