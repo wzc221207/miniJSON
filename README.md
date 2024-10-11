@@ -1,6 +1,6 @@
 # MiniJSON ![Lint](https://github.com/wzc221207/miniJSON/actions/workflows/lint.yml/badge.svg) ![Test](https://github.com/wzc221207/miniJSON/actions/workflows/test.yml/badge.svg)
 
-MiniJSON is a C++ header-only JSON parsing library I wrote for my own learning purposes. It is not intended to be used for production.
+MiniJSON is a simple header-only JSON parsing library written using C++11 features. It is created while I was learning the inner workings of a JSON parser from awesome libraries such as JSON for Modern C++ and cJSON. It is maintained only for learning purposes and not intended to be used on production.
 
 ## Usage
 
@@ -10,7 +10,7 @@ MiniJSON is a C++ header-only JSON parsing library I wrote for my own learning p
 
 // parse JSON string
 auto json = miniJSON::parse(
-      R"({"username": "Alicia", "age": 32, "friends": ["Michael", "David"], "job": null})");
+R"({"username": "Alicia", "age": 32, "friends": ["Michael", "David"], "job": null})");
 // access values in JSON node
 std::cout << json["username"].get_string() << std::endl;    // Alicia
 std::cout << json["age"].get_integer() << std::endl;        // 32
@@ -18,13 +18,20 @@ std::cout << json["friends"][1].get_string() << std::endl;  // David
 // change values in JSON node
 json["username"] = "Gloria";
 json["age"] = 26;
+json["friends"][1] = "Daryl";
 json["job"] = "Statistician";
 std::cout << json["username"].get_string() << std::endl;    // Gloria
 std::cout << json["age"].get_integer() << std::endl;        // 26
-std::cout << json["friends"][1].get_string() << std::endl;  // John
-std::cout << json["job"].get_string() << std::endl;       // Statistician
-// serialization
-std::cout << json.to_string() << std::endl;  // {"username":"Gloria","age":26,"friends":["Michael","John"],"job":null}
+std::cout << json["friends"][1].get_string() << std::endl;  // Daryl
+std::cout << json["job"].get_string() << std::endl;         // Statistician
+// use initializer list to create JSON object or array
+json["likes"] = {"volleyball", "tennis"}; // array
+json["relationship"] = {{"John", "husband"}}; // object
+/* serialization
+output:
+{"username":"Gloria","age":26,"friends":["Michael","Daryl"],"job":"Statistician","likes":["volleyball","tennis"],"relationship":{"John":"husband"}}
+*/
+std::cout << json.to_string() << std::endl;
 ```
 
 ## License

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.6 (2024-10-12)
+
+Features
+- Support initializing object and array using initializer list
+
 ## 0.1.5 (2024-10-09)
 
 Features

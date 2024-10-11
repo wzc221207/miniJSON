@@ -60,6 +60,18 @@ TEST(SetterTest, Object) {
     json = nullptr;
     EXPECT_EQ(json.to_string(), R"(null)");
   }
+  {
+    // initializer_list
+    miniJSON::json_node json = {{"name", "Alicia"}, {"age", 32}};
+    EXPECT_EQ(json.to_string(), R"({"name":"Alicia","age":32})");
+  }
+  {
+    // initializer_list: mixed with array
+    miniJSON::json_node json = {
+        {"name", "Alicia"}, {"age", 32}, {"friends", {"David", "Michael"}}};
+    EXPECT_EQ(json.to_string(),
+              R"({"name":"Alicia","age":32,"friends":["David","Michael"]})");
+  }
 }
 
 TEST(SetterTest, Array) {
@@ -72,5 +84,21 @@ TEST(SetterTest, Array) {
     EXPECT_EQ(json.to_string(), R"({"friends":["Alicia","John","David"]})");
     json["friends"] = nullptr;
     EXPECT_EQ(json["friends"].to_string(), R"(null)");
+  }
+  {
+    // initializer_list: one dimensional
+    miniJSON::json_node json = {"volleyball", 1, nullptr, 1.2, false};
+    EXPECT_EQ(json.to_string(), R"(["volleyball",1,null,1.2,false])");
+  }
+  {
+    // initializer_list: two dimensional
+    miniJSON::json_node json = {{1, "abc", false}, {nullptr, 4, true}};
+    EXPECT_EQ(json.to_string(), R"([[1,"abc",false],[null,4,true]])");
+  }
+  {
+    // initializer_list: mixed with object
+    miniJSON::json_node json = {{1, "abc", false},
+                                {nullptr, 4, true, {{"a", 1}}}};
+    EXPECT_EQ(json.to_string(), R"([[1,"abc",false],[null,4,true,{"a":1}]])");
   }
 }

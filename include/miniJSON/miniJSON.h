@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstring>
+#include <initializer_list>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -14,7 +15,7 @@
 
 #define MINIJSON_VERSION_MAJOR 0
 #define MINIJSON_VERSION_MINOR 1
-#define MINIJSON_VERSION_PATCH 5
+#define MINIJSON_VERSION_PATCH 6
 
 namespace miniJSON {
 /*
@@ -24,8 +25,6 @@ namespace miniJSON {
 class json_node {
  public:
   json_node() {}
-  json_node(const json_node &other) = delete;
-  json_node &operator=(const json_node &other) = delete;
   json_node(json_node &&other)
       : m_value(std::move(other.m_value)), m_type(other.m_type) {
     other.m_value = {};
@@ -49,6 +48,58 @@ class json_node {
     }
     return *this;
   }
+  json_node(const json_node &other) : m_type(other.m_type) {
+    if (m_type == json_value_type::object) {
+      m_value.object = new json_object_t(*other.m_value.object);
+      for (auto &key : *other.m_value.object) {
+        (*m_value.object)[key] = new json_node(json_value_type::indeterminate);
+        *(*m_value.object)[key] = *(*other.m_value.object)[key];
+      }
+    } else if (m_type == json_value_type::array) {
+      m_value.array = new json_array_t(*other.m_value.array);
+      for (int i = 0; i < other.m_value.array->size(); i++) {
+        (*m_value.array)[i] = new json_node(json_value_type::indeterminate);
+        *(*m_value.array)[i] = *(*other.m_value.array)[i];
+      }
+    } else if (m_type == json_value_type::string) {
+      m_value.str = new json_string_t(*other.m_value.str);
+    } else {
+      m_value = other.m_value;
+    }
+  }
+  json_node &operator=(const json_node &other) {
+    if (this != &other) {
+      if (m_type == json_value_type::object) {
+        delete_object();
+      }
+      if (m_type == json_value_type::array) {
+        delete_array();
+      }
+      if (m_type == json_value_type::string) {
+        delete_string();
+      }
+      m_type = other.m_type;
+      if (m_type == json_value_type::object) {
+        m_value.object = new json_object_t(*other.m_value.object);
+        for (auto &key : *other.m_value.object) {
+          (*m_value.object)[key] =
+              new json_node(json_value_type::indeterminate);
+          *(*m_value.object)[key] = *(*other.m_value.object)[key];
+        }
+      } else if (m_type == json_value_type::array) {
+        m_value.array = new json_array_t(*other.m_value.array);
+        for (int i = 0; i < other.m_value.array->size(); i++) {
+          (*m_value.array)[i] = new json_node(json_value_type::indeterminate);
+          *(*m_value.array)[i] = *(*other.m_value.array)[i];
+        }
+      } else if (m_type == json_value_type::string) {
+        m_value.str = new json_string_t(*other.m_value.str);
+      } else {
+        m_value = other.m_value;
+      }
+    }
+    return *this;
+  }
   ~json_node() {
     if (m_type == json_value_type::array) {
       delete_array();
@@ -60,6 +111,10 @@ class json_node {
   }
 
  private:
+  /*
+    Helper methods to delete JSON nodes of object/array/string types
+   */
+
   void delete_object() {
     for (auto key : *m_value.object) {
       delete (*m_value.object)[key];
@@ -130,7 +185,7 @@ class json_node {
           "non-existent element of object or array creates indeterminate "
           "node.");
     }
-    return "";
+    throw json_type_error("invalid type");
   }
 
  public:
@@ -146,6 +201,41 @@ class json_node {
     Get the current JSON value type
   */
   json_value_type get_type() const { return m_type; }
+
+  /*
+    Get the current JSON value type in string
+  */
+  std::string get_type_in_string() const {
+    switch (m_type) {
+      case json_value_type::array:
+        return "Array";
+        break;
+      case json_value_type::object:
+        return "Object";
+        break;
+      case json_value_type::null:
+        return "Null";
+        break;
+      case json_value_type::indeterminate:
+        return "Indeterminate";
+        break;
+      case json_value_type::number_double:
+        return "Double Number";
+        break;
+      case json_value_type::number_int:
+        return "Integral Number";
+        break;
+      case json_value_type::string:
+        return "String";
+        break;
+      case json_value_type::boolean:
+        return "Boolean";
+        break;
+      default:
+        break;
+    }
+    throw json_type_error("invalid type");
+  }
 
   /*
     Get the current boolean value
@@ -211,7 +301,10 @@ class json_node {
   */
   json_node &operator[](size_t index) const {
     if (m_type == json_value_type::array) {
-      if ((index >= m_value.array->size()) || index < 0) {
+      if (index < 0) {
+        throw std::out_of_range("invalid negative index value");
+      }
+      if ((index >= m_value.array->size())) {
         m_value.array->resize(index + 1);
         (*m_value.array)[index] = new json_node(json_value_type::indeterminate);
       }
@@ -223,6 +316,10 @@ class json_node {
   }
 
  public:
+  /*
+    List of convenient constructors
+  */
+
   json_node(json_value_type t) : m_type(t) {
     switch (t) {
       case json_value_type::string:
@@ -276,6 +373,54 @@ class json_node {
     m_type = json_value_type::string;
   }
   json_node(std::nullptr_t n) {}
+  json_node(std::initializer_list<json_node> l) {
+    bool is_object = is_initializer_object(l);
+    size_t sz = l.size();
+    if (is_object) {
+      m_type = json_value_type::object;
+      m_value.object = new json_object_t;
+      for (auto it = l.begin(); it != l.end(); it++) {
+        const std::string &key = (*(it->m_value.array))[0]->get_string();
+        json_node *value = (*(it->m_value.array))[1];
+        (*m_value.object)[key] = new json_node(json_value_type::indeterminate);
+        *(*m_value.object)[key] = *value;
+      }
+    } else {
+      m_type = json_value_type::array;
+      m_value.array = new json_array_t(sz);
+      for (int i = 0; i < sz; i++) {
+        (*m_value.array)[i] = new json_node(json_value_type::indeterminate);
+      }
+      size_t idx = 0;
+      for (auto it = l.begin(); it != l.end(); idx++) {
+        *(*m_value.array)[idx] = *it;
+        it++;
+      }
+    }
+  }
+
+ private:
+  /*
+    Check if the initializer list contains an JSON of object type
+  */
+  bool is_initializer_object(const std::initializer_list<json_node> &l) {
+    bool is_object = true;
+    for (auto it = l.begin(); it != l.end(); it++) {
+      if (it->m_type != json_value_type::array) {
+        is_object = false;
+        break;
+      }
+      if (it->m_value.array->size() != 2) {
+        is_object = false;
+        break;
+      }
+      if ((*it->m_value.array)[0]->m_type != json_value_type::string) {
+        is_object = false;
+        break;
+      }
+    }
+    return is_object;
+  }
 
  private:
   /*
@@ -343,6 +488,8 @@ class json_node {
     json_double_t number_double;
     json_boolean_t boolean;
     json_value() = default;
+    json_value(const json_value &other) = default;
+    json_value &operator=(const json_value &other) = default;
     json_value(json_value &&other) = default;
     json_value &operator=(json_value &&other) = default;
   };
