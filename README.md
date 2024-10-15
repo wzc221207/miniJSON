@@ -27,11 +27,29 @@ std::cout << json["job"].get_string() << std::endl;         // Statistician
 // use initializer list to create JSON object or array
 json["likes"] = {"volleyball", "tennis"}; // array
 json["relationship"] = {{"John", "husband"}}; // object
-/* serialization
-output:
-{"username":"Gloria","age":26,"friends":["Michael","Daryl"],"job":"Statistician","likes":["volleyball","tennis"],"relationship":{"John":"husband"}}
+/* 
+  serialization
+  output:
+    {"username":"Gloria","age":26,"friends":["Michael","Daryl"],"job":"Statistician","likes":["volleyball","tennis"],"relationship":{"John":"husband"}}
 */
 std::cout << json.to_string() << std::endl;
+/* 
+  iterating over array
+  output:
+    Michael
+    Daryl
+*/
+for (auto &j : json["friends"]) {
+    std::cout << j.get_string() << std::endl;
+}
+/* 
+  iterating over object
+  output:
+    John : husband
+*/
+for (auto it = json["relationship"].begin(); it != json["relationship"].end(); it++) {
+    std::cout << it.key() << " : " << it.value()->get_string() << std::endl;
+}
 ```
 
 ## License

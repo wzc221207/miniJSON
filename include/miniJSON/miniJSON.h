@@ -15,7 +15,7 @@
 
 #define MINIJSON_VERSION_MAJOR 0
 #define MINIJSON_VERSION_MINOR 1
-#define MINIJSON_VERSION_PATCH 6
+#define MINIJSON_VERSION_PATCH 7
 
 namespace miniJSON {
 /*
@@ -282,7 +282,7 @@ class json_node {
   }
 
   /*
-    Get the current object value
+    Get value associated with key from object
   */
   json_node &operator[](json_string_t key) const {
     if (m_type == json_value_type::object) {
@@ -297,7 +297,7 @@ class json_node {
   }
 
   /*
-    Get the current array value
+    Get value at index from array
   */
   json_node &operator[](size_t index) const {
     if (m_type == json_value_type::array) {
@@ -313,6 +313,107 @@ class json_node {
     }
     throw json_type_error(
         "trying to access array value from a non-array JSON node");
+  }
+
+ public:
+  struct iterator {
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = const json_node &;
+    using pointer = json_node *;
+    using reference = json_node &;
+    iterator(pointer ptr, json_array_t::iterator array_iterator = {},
+             json_object_t::values_iterator object_iterator = {})
+        : m_ptr(ptr),
+          m_array_iterator(array_iterator),
+          m_object_iterator(object_iterator) {}
+    value_type operator*() const {
+      if (m_ptr->m_type == json_value_type::array) {
+        return *(*m_array_iterator);
+      } else if (m_ptr->m_type == json_value_type::object) {
+        return *(*m_object_iterator);
+      }
+      throw json_type_error(
+          "json_node iterator not supported for non object or array types");
+    }
+    pointer operator->() {
+      if (m_ptr->m_type == json_value_type::array) {
+        return *m_array_iterator;
+      } else if (m_ptr->m_type == json_value_type::object) {
+        return *m_object_iterator;
+      }
+      throw json_type_error(
+          "json_node iterator not supported for non object or array types");
+    }
+
+    iterator &operator++() {
+      auto j = *m_ptr;
+      if (m_ptr->m_type == json_value_type::array) {
+        m_array_iterator++;
+      } else if (m_ptr->m_type == json_value_type::object) {
+        m_object_iterator++;
+      }
+      return *this;
+    }
+
+    iterator operator++(int) {
+      auto tmp = *this;
+      ++*this;
+      return tmp;
+    }
+
+    bool operator==(const iterator &other) const {
+      return this->m_ptr == other.m_ptr &&
+             m_array_iterator == other.m_array_iterator &&
+             m_object_iterator == other.m_object_iterator;
+    }
+    bool operator!=(const iterator &other) const {
+      return this->m_ptr != other.m_ptr ||
+             m_array_iterator != other.m_array_iterator ||
+             m_object_iterator != other.m_object_iterator;
+    }
+
+   public:
+    json_string_t key() {
+      if (m_ptr->m_type == json_value_type::object) {
+        return m_object_iterator.key();
+      }
+      throw json_type_error(
+          "iterator::key() is only supported for object type");
+    }
+    pointer value() {
+      if (m_ptr->m_type == json_value_type::object) {
+        return m_object_iterator.value();
+      }
+      throw json_type_error(
+          "iterator::value() is only supported for object type");
+    }
+
+   private:
+    pointer m_ptr;
+    json_array_t::iterator m_array_iterator;
+    json_object_t::values_iterator m_object_iterator;
+  };
+
+  iterator begin() {
+    if (m_type == json_value_type::array) {
+      return iterator(this, m_value.array->begin());
+    } else if (m_type == json_value_type::object) {
+      return iterator(this, {}, m_value.object->values_begin());
+    }
+    throw json_type_error(
+        "json_node iterator not supported for non object or array types");
+    return iterator(nullptr);
+  }
+  iterator end() {
+    if (m_type == json_value_type::array) {
+      return iterator(this, m_value.array->end());
+    } else if (m_type == json_value_type::object) {
+      return iterator(this, {}, m_value.object->values_end());
+    }
+    throw json_type_error(
+        "json_node iterator not supported for non object or array types");
+    return iterator(nullptr);
   }
 
  public:

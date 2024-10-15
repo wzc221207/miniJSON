@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.7 (2024-10-15)
+
+Features
+- Support iterating over object and array JSON data types
+
 ## 0.1.6 (2024-10-12)
 
 Features
