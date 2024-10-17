@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.14)
-project(miniJSON VERSION 0.1.7)
+project(miniJSON VERSION 0.1.8)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+aux_source_directory(tests TEST_FILES)
 
 # Google Test Setup
 include(FetchContent)
@@ -14,7 +16,8 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 enable_testing()
-add_executable(miniJSON_tests tests/basic_parse_test.cpp tests/getter_test.cpp tests/setter_test.cpp tests/iterator_test.cpp)
+
+add_executable(miniJSON_tests ${TEST_FILES})
 include_directories(include)
 target_link_libraries(miniJSON_tests GTest::gtest_main)
 include(GoogleTest)

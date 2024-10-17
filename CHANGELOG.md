@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.8 (2024-10-17)
+
+Test
+- Add parsing tests for randomly generated large-json data
+
+Refactor
+- Refactor parser code
+
 ## 0.1.7 (2024-10-15)
 
 Features

@@ -1,5 +1,6 @@
 // Copyright (c) 2024 Zhichen (Joshua) Wen
 #pragma once
+#include <cctype>
 #include <cmath>
 #include <cstdlib>
 #include <string>
@@ -40,21 +41,29 @@ class parser {
     reach_array_separator
   };
 
+  json_parse_type parse_array_item(JSONNode *array) {
+    parse_whitespace();
+    JSONNode *value = new JSONNode();
+    if (parse_value(value) != json_parse_type::json_value) {
+      delete value;
+      return json_parse_type::error;
+    }
+    array->m_value.array->push_back(value);
+    parse_whitespace();
+    if (!parse_comma(true)) {
+      return json_parse_type::error;
+    }
+    return json_parse_type::json_value;
+  }
+
   json_parse_type parse_array(JSONNode *result) {
     result->set_array();
     while (remaining_parse_length() > 0) {
-      JSONNode *j = new JSONNode();
-      auto parse_type = parse_value(j);
-      if (parse_type == json_parse_type::json_value) {
-        result->m_value.array->push_back(j);
-        continue;
-      }
-      delete j;  // delete if haven't parsed a valid json value
-      if (parse_type == json_parse_type::reach_array_end) {
+      if (current_character() == ']') {
+        m_parse_index++;
         break;
-      } else if (parse_type == json_parse_type::reach_array_separator) {
-        continue;
-      } else if (parse_type == json_parse_type::error) {
+      }
+      if (parse_array_item(result) != json_parse_type::json_value) {
         return json_parse_type::error;
       }
     }
@@ -177,29 +186,22 @@ class parser {
   }
 
   void parse_whitespace() {
-    while (remaining_parse_length() >= 1 &&
-           (current_character() == ' ' || current_character() == '\n' ||
-            current_character() == '\r' || current_character() == '\t')) {
+    while (remaining_parse_length() >= 1 && isspace(current_character())) {
       m_parse_index++;
     }
   }
 
-  bool parse_comma() {
+  bool parse_comma(bool is_array = false) {
     if (current_character() == ',') {
       m_parse_index++;
       return true;
     }
     int idx = m_parse_index;
-    while (idx < m_json_s.length()) {
-      if (m_json_s[idx] == '}') {
-        return true;
-      }
-      if (m_json_s[idx] == ' ' || m_json_s[idx] == '\n' ||
-          m_json_s[idx] == '\r' || m_json_s[idx] == '\t') {
-        idx++;
-        continue;
-      }
-      break;
+    if (!is_array && m_json_s[idx] == '}') {
+      return true;
+    }
+    if (is_array && m_json_s[idx] == ']') {
+      return true;
     }
     return false;
   }
@@ -207,10 +209,9 @@ class parser {
   json_parse_type parse_number(JSONNode *result) {
     std::string number_s;
     while (remaining_parse_length() > 0) {
-      if ((current_character() >= '0' && current_character() <= '9') ||
-          current_character() == '-' || current_character() == '+' ||
-          current_character() == 'e' || current_character() == 'E' ||
-          current_character() == '.') {
+      if (isdigit(current_character()) || current_character() == '-' ||
+          current_character() == '+' || current_character() == 'e' ||
+          current_character() == 'E' || current_character() == '.') {
         number_s += current_character();
         m_parse_index++;
       } else {
@@ -278,8 +279,7 @@ class parser {
       m_parse_index++;
       type = parse_string(result);
     } else if (remaining_parse_length() > 0 &&
-               ((current_character() >= '0' && current_character() <= '9') ||
-                current_character() == '-')) {
+               (isdigit(current_character()) || current_character() == '-')) {
       type = parse_number(result);
     }
     parse_whitespace();
