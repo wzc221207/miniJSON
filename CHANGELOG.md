@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.9 (2024-10-19)
+
+CI
+- Add code summary (code lines count)
+
 ## 0.1.8 (2024-10-17)
 
 Test

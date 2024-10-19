@@ -1,0 +1,32 @@
+name: Code-Summary
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: code-summary
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install CLOC
+        run: sudo apt-get install cloc
+
+      - name: Run CLOC
+        run: |
+          cloc ./include
+          cloc ./tests
+          src_count=$(cloc include | grep "SUM.*" | awk '{print $5}')
+          test_count=$(cloc tests | grep "SUM.*" | awk '{print $5}')
+          ratio=$(echo "scale=2;var=$src_count;var/=$test_count;var" | bc)
+          echo "## Code Summary" >> $GITHUB_STEP_SUMMARY
+          echo "**Source code count**: $src_count" >> $GITHUB_STEP_SUMMARY
+          echo "**Test code count**: $test_count" >> $GITHUB_STEP_SUMMARY
+          echo "**Source Code and Test Code Ratio**: $ratio" >> $GITHUB_STEP_SUMMARY
