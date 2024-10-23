@@ -1,5 +1,6 @@
 // Copyright (c) 2024 Zhichen (Joshua) Wen
 #pragma once
+#include <algorithm>
 #include <unordered_map>
 #include <vector>
 
@@ -17,6 +18,12 @@ class ordered_map {
     return m_map[key];
   }
   size_t count(const Key &key) { return m_map.count(key); }
+  size_t erase(const Key &key) {
+    insertion_order.erase(
+        std::remove(insertion_order.begin(), insertion_order.end(), key),
+        insertion_order.end());
+    return m_map.erase(key);
+  }
   size_t size() { return m_map.size(); }
 
  public:

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.10 (2024-10-23)
+
+Features
+- Support deletion of entries from JSON node of object or array type.
+
 ## 0.1.9 (2024-10-19)
 
 CI

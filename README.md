@@ -50,6 +50,14 @@ for (auto &j : json["friends"]) {
 for (auto it = json["relationship"].begin(); it != json["relationship"].end(); it++) {
     std::cout << it.key() << " : " << it.value()->get_string() << std::endl;
 }
+/*
+  delete entries from object
+*/
+json["friends"].erase(0); // deleted Michael at array index 0
+/*
+  delete entries from array
+*/
+json["relationship"].erase("John"); // deleted a pair whose key is John
 ```
 
 ## License

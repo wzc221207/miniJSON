@@ -15,7 +15,7 @@
 
 #define MINIJSON_VERSION_MAJOR 0
 #define MINIJSON_VERSION_MINOR 1
-#define MINIJSON_VERSION_PATCH 9
+#define MINIJSON_VERSION_PATCH 10
 
 namespace miniJSON {
 /*
@@ -498,6 +498,30 @@ class json_node {
         it++;
       }
     }
+  }
+
+ public:
+  /*
+    delete methods for JSON of object or array type
+  */
+  size_t erase(const std::string &key) {
+    if (m_type == json_value_type::object) {
+      if (m_value.object->count(key) == 0) {
+        return 0;
+      }
+      return m_value.object->erase(key);
+    }
+    throw json_type_error(
+        "trying to delete key-pair from a non-object JSON node");
+  }
+  json_array_t::iterator erase(size_t index) {
+    if (m_type == json_value_type::array) {
+      if (index >= m_value.array->size()) {
+        throw std::out_of_range("invalid index");
+      }
+      return m_value.array->erase(m_value.array->begin() + index);
+    }
+    throw json_type_error("trying to delete value from a non-array JSON node");
   }
 
  private:
