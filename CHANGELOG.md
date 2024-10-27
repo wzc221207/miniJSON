@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.11 (2024-10-27)
+
+Fix
+- Fix incorrect type casting when parsing a number
+
 ## 0.1.10 (2024-10-23)
 
 Features

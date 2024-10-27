@@ -2,7 +2,9 @@
 #pragma once
 #include <cctype>
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
+#include <limits>
 #include <string>
 #include <utility>
 #include <vector>
@@ -225,20 +227,21 @@ class parser {
     if (strlen(end_ptr) > 0) {
       return json_parse_type::error;
     }
-    // must hvae digits after dot
+    // number cannot end with a dot
     if (number_s[number_s.length() - 1] == '.') {
       return json_parse_type::error;
     }
-    // check it's double or integer
+    // check the number is a double or integer
     double integral_part;
     bool isDouble = (modf(d, &integral_part) != 0.0);
 
-    if (d > INT64_MAX || d < INT64_MIN) {
+    if (d > std::numeric_limits<int64_t>::max() ||
+        d < std::numeric_limits<int64_t>::min()) {
       result->set_number_double(d);
     } else if (isDouble) {
       result->set_number_double(d);
     } else {
-      result->set_number_int(static_cast<uint64_t>(d));
+      result->set_number_int(static_cast<int64_t>(d));
     }
 
     return json_parse_type::json_value;
