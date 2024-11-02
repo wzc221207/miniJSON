@@ -1,6 +1,7 @@
 // Copyright (c) 2024 Zhichen (Joshua) Wen
 #pragma once
 
+#include <cassert>
 #include <cstring>
 #include <initializer_list>
 #include <sstream>
@@ -24,13 +25,15 @@ namespace miniJSON {
 */
 class json_node {
  public:
-  json_node() {}
+  json_node() { test_invariant(); }
   json_node(json_node &&other)
       : m_value(std::move(other.m_value)), m_type(other.m_type) {
     other.m_value = {};
     other.m_type = json_value_type::null;
+    test_invariant();
   }
   json_node &operator=(json_node &&other) {
+    test_invariant();
     if (this != &other) {
       if (m_type == json_value_type::object) {
         delete_object();
@@ -46,6 +49,7 @@ class json_node {
       other.m_value = {};
       other.m_type = json_value_type::null;
     }
+    test_invariant();
     return *this;
   }
   json_node(const json_node &other) : m_type(other.m_type) {
@@ -66,8 +70,10 @@ class json_node {
     } else {
       m_value = other.m_value;
     }
+    test_invariant();
   }
   json_node &operator=(const json_node &other) {
+    test_invariant();
     if (this != &other) {
       if (m_type == json_value_type::object) {
         delete_object();
@@ -98,9 +104,11 @@ class json_node {
         m_value = other.m_value;
       }
     }
+    test_invariant();
     return *this;
   }
   ~json_node() {
+    test_invariant();
     if (m_type == json_value_type::array) {
       delete_array();
     } else if (m_type == json_value_type::string) {
@@ -448,32 +456,39 @@ class json_node {
       default:
         break;
     }
+    test_invariant();
   }
   json_node(json_boolean_t b) {
     m_value.boolean = b;
     m_type = json_value_type::boolean;
+    test_invariant();
   }
   json_node(json_int_t num) {
     m_value.number_int = num;
     m_type = json_value_type::number_int;
+    test_invariant();
   }
   json_node(int num) {
     m_value.number_int = num;
     m_type = json_value_type::number_int;
+    test_invariant();
   }
   json_node(json_double_t num) {
     m_value.number_double = num;
     m_type = json_value_type::number_double;
+    test_invariant();
   }
   json_node(const char *s) {
     m_value.str = new std::string(s);
     m_type = json_value_type::string;
+    test_invariant();
   }
   json_node(const json_string_t &s) {
     m_value.str = new std::string(s);
     m_type = json_value_type::string;
+    test_invariant();
   }
-  json_node(std::nullptr_t n) {}
+  json_node(std::nullptr_t n) { test_invariant(); }
   json_node(std::initializer_list<json_node> l) {
     bool is_object = is_initializer_object(l);
     size_t sz = l.size();
@@ -498,6 +513,7 @@ class json_node {
         it++;
       }
     }
+    test_invariant();
   }
 
  public:
@@ -509,6 +525,7 @@ class json_node {
       if (m_value.object->count(key) == 0) {
         return 0;
       }
+      delete (*m_value.object)[key];  // free the json node about to be deleted
       return m_value.object->erase(key);
     }
     throw json_type_error(
@@ -519,6 +536,8 @@ class json_node {
       if (index >= m_value.array->size()) {
         throw std::out_of_range("invalid index");
       }
+      delete *(m_value.array->begin() +
+               index);  // free the json node about to be deleted
       return m_value.array->erase(m_value.array->begin() + index);
     }
     throw json_type_error("trying to delete value from a non-array JSON node");
@@ -618,6 +637,19 @@ class json_node {
     json_value(json_value &&other) = default;
     json_value &operator=(json_value &&other) = default;
   };
+
+ private:
+  void test_invariant() const {
+    if (m_type == json_value_type::array) {
+      assert(m_value.array != nullptr);
+    }
+    if (m_type == json_value_type::object) {
+      assert(m_value.object != nullptr);
+    }
+    if (m_type == json_value_type::string) {
+      assert(m_value.str != nullptr);
+    }
+  }
 
  private:
   json_value m_value = {};

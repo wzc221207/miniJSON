@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.12 (2024-11-02)
+
+Fix
+- Fix memory leak when delete nodes from JSON nodes
+- Add class invariant check
+
+CI
+- Fix memory leak not flagged as error in Github workflow
+
 ## 0.1.11 (2024-10-27)
 
 Fix

@@ -35,4 +35,4 @@ jobs:
         run: |
           cd ./build
           ls -al
-          valgrind --leak-check=yes ./miniJSON_tests
+          valgrind --error-exitcode=1 --tool=memcheck --leak-check=full --track-origins=yes ./miniJSON_tests

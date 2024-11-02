@@ -1,6 +1,7 @@
 // Copyright (c) 2024 Zhichen (Joshua) Wen
 #pragma once
 #include <algorithm>
+#include <cassert>
 #include <unordered_map>
 #include <vector>
 
@@ -10,19 +11,25 @@
 template <typename Key, typename Value>
 class ordered_map {
  public:
-  ordered_map() {}
+  ordered_map() { test_invariant(); }
   Value &operator[](const Key &key) {
+    test_invariant();
     if (m_map.count(key) == 0) {
-      insertion_order.push_back(key);
+      m_insertion_order.push_back(key);
     }
-    return m_map[key];
+    auto &res = m_map[key];
+    test_invariant();
+    return res;
   }
-  size_t count(const Key &key) { return m_map.count(key); }
+  size_t count(const Key &key) const { return m_map.count(key); }
   size_t erase(const Key &key) {
-    insertion_order.erase(
-        std::remove(insertion_order.begin(), insertion_order.end(), key),
-        insertion_order.end());
-    return m_map.erase(key);
+    test_invariant();
+    m_insertion_order.erase(
+        std::remove(m_insertion_order.begin(), m_insertion_order.end(), key),
+        m_insertion_order.end());
+    size_t res = m_map.erase(key);
+    test_invariant();
+    return res;
   }
   size_t size() { return m_map.size(); }
 
@@ -102,16 +109,21 @@ class ordered_map {
 
  public:
   values_iterator values_begin() {
-    return values_iterator(&m_map, insertion_order.begin());
+    return values_iterator(&m_map, m_insertion_order.begin());
   }
   values_iterator values_end() {
-    return values_iterator(&m_map, insertion_order.end());
+    return values_iterator(&m_map, m_insertion_order.end());
   }
 
-  keys_iterator begin() { return keys_iterator(insertion_order.begin()); }
-  keys_iterator end() { return keys_iterator(insertion_order.end()); }
+  keys_iterator begin() { return keys_iterator(m_insertion_order.begin()); }
+  keys_iterator end() { return keys_iterator(m_insertion_order.end()); }
+
+ private:
+  void test_invariant() const {
+    assert(m_map.size() == m_insertion_order.size());
+  }
 
  private:
   std::unordered_map<Key, Value> m_map;
-  std::vector<Key> insertion_order;
+  std::vector<Key> m_insertion_order;
 };
